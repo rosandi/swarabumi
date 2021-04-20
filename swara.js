@@ -24,23 +24,28 @@ function drawAxis() {
     ctx.stroke();
 }
 
-function plotfile(fname,xx,res,axis='z') {
+function plotfile(fname,xx,resx,resy,axis='z',fmax) {
     
     if(fname=='--' || fname=='' || fname=='null') return;
     
-    
-    $.getJSON('load/'+fname+'/'+res+'/'+axis, function(data){
+    $.getJSON('load/'+fname+'/'+resy+'/'+axis, function(data){
         var max=-1000;
-        for (i=0;i<res;i++) if (max<data.mag[i]) max=data.mag[i];
+        var min=1e8;
         
+        if (fmax<resy) resy=fmax; // FIXME! Use frequency
         
-        boxh=Math.round((hh-110)/res);
-        boxw=ww/200; // should be range
+        for (i=0;i<resy;i++) {
+            if (max<data.mag[i]) max=data.mag[i];
+            if (min>data.mag[i]) min=data.mag[i];
+        }
+        
+        boxh=(hh-110)/resy;
+        boxw=(ww-ofsw)/resx; // should be range
         ofx=ofsw+xx*boxw;
         iy=hh-100;
 
-        for (i=0;i<res;i++) {
-            clr='hsl('+(255-255*(data.mag[i]/max))+',100%,50%)';
+        for (i=0;i<resy;i++) {
+            clr='hsl('+(255-255*((data.mag[i]-min)/(max-min)))+',80%,50%)';
             ctx.beginPath();
             ctx.rect(ofx,iy-boxh, boxw, boxh);
             ctx.fillStyle=clr;
@@ -51,12 +56,11 @@ function plotfile(fname,xx,res,axis='z') {
     });
 }
 
-function listSpectrum(from=0, to=200, axis='z'){
+function listSpectrum(from=0, to=200, axis='z',fmax=Infinity){
     $.getJSON('list/json',function(lst) {
         if(lst.files.lenght<to) to=lst.files.lenght;
         for(i=0;i<to;i++) {
-            plotfile(lst.files[i],i,hh-ofsh,axis)
-            
+            plotfile(lst.files[i],i,to-from,200,axis,fmax=fmax)
         }
     });
 }
@@ -65,4 +69,4 @@ function listSpectrum(from=0, to=200, axis='z'){
 
 drawAxis();
 // plotfile('20210411102119.json',0,res=hh-ofsh);
-listSpectrum();
+listSpectrum(0,200,'z');

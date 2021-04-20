@@ -5,14 +5,17 @@ import sys
 import os
 import json
 import numpy as np
-from scipy.fft import fft
+try:
+    from scipy.fft import fft
+except:
+    from scipy.fftpack import fft
 
 from subprocess import check_output as cmd
 from time import sleep,time
 
 sleeplength=0.01
 host=''
-port=8000
+port=8080
 app='swara.html'
 datapath='./data'
 
@@ -154,9 +157,8 @@ class OtherApiHandler(BaseHTTPRequestHandler):
 print("serving on %s:%s"%(host,port))
 
 try:
-    with HTTPServer((host,int(port)), OtherApiHandler) as server:
-        server.serve_forever()
-        
+    HTTPServer((host,int(port)), OtherApiHandler).serve_forever()
+
 except KeyboardInterrupt:
     print("\nterminating server")
     print("bye...")
