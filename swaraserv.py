@@ -42,9 +42,8 @@ def spectrum(data,nseg,axis='z'):
     
     vv=vv/aa
     fniq=0.5*data['length']/data['tsample']
-    ff=np.linspace(0,fniq,nseg)
-    
-    return ff.tolist(),np.abs(vv).tolist()
+    vv[0]=0 # remove offset
+    return fniq,np.abs(vv).tolist()
 
 def hvsr(data,nseg):
     la=int(data['length']/2)
@@ -62,9 +61,8 @@ def hvsr(data,nseg):
     
     vv=vv/aa
     fniq=0.5*data['length']/data['tsample']
-    ff=np.linspace(0,fniq,nseg)
-    
-    return ff.tolist(),np.abs(vv).tolist()
+    vv[0]=0 # remove offset
+    return fniq,np.abs(vv).tolist()
     
 
 class OtherApiHandler(BaseHTTPRequestHandler):
@@ -116,6 +114,17 @@ class OtherApiHandler(BaseHTTPRequestHandler):
             except:
                 self.response("/* file not found {} */".format(htfile))
 
+        elif htfile.rfind('.css',len(htfile)-4)>0:
+            print('sending style---'+htfile)
+            try:
+                jsfile=open(htfile,mode='r')
+                htcontent=jsfile.read()
+                jsfile.close()
+                self.response(htcontent,'text/css')
+                print('sent css: {}'.format(htfile))
+            except:
+                self.response("/* file not found {} */".format(htfile))
+
         elif htfile.find('list') == 0:
             datafiles=[]
             ext='.'+htfile.split()[1]
@@ -131,19 +140,23 @@ class OtherApiHandler(BaseHTTPRequestHandler):
             param=htfile.split()
             fname=datapath+'/'+param[1]
             ln=int(param[2])
-            # param[3] --> hvsr or axis
+            
+
             try:
                 fl=open(fname)
                 data=json.load(fl)
                 fl.close()
             except:
-                self.response('--')
+                self.response('*** can not find data ***')
                 return
+                
+            # param[3] --> hvsr or axis ot plot_type              
             if param[3] == 'hvsr':
-                freq,mag=hvsr(data,ln)
+                fmax,mag=hvsr(data,ln)
             else:
-                freq,mag=spectrum(data,ln,axis=param[3])
-            v=json.dumps({'freq':freq,'mag':mag})
+                fmax,mag=spectrum(data,ln,axis=param[3])
+                
+            v=json.dumps({'fmax':fmax,'mag':mag})
             self.response(v,'text/json')
             
         else:
